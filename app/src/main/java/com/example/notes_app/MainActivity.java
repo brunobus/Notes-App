@@ -17,6 +17,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 
@@ -36,7 +37,7 @@ import android.widget.Toast;
 
 import java.util.Date;
 
-public class MainActivity extends AppCompatActivity implements FirebaseAuth.AuthStateListener {
+public class MainActivity extends AppCompatActivity implements FirebaseAuth.AuthStateListener, NotesRecyclerAdapter.NoteListener {
 
     RecyclerView recyclerView;
     private static final String TAG = "MainActivity";
@@ -182,9 +183,27 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 .setQuery(query, Note.class)
                 .build();
 
-        notesRecyclerAdapter = new NotesRecyclerAdapter(options);
+        notesRecyclerAdapter = new NotesRecyclerAdapter(options, this);
         recyclerView.setAdapter(notesRecyclerAdapter);
 
         notesRecyclerAdapter.startListening();
+    }
+
+    @Override
+    public void handleCheckChanged(boolean isChecked, DocumentSnapshot snapshot) {
+        Log.d(TAG, "handleCheckChanged: " + isChecked);
+        snapshot.getReference().update("completed", isChecked)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d(TAG, "onSuccess: ");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d(TAG, "onFailure: " + e.getLocalizedMessage());
+                    }
+                });
     }
 }
