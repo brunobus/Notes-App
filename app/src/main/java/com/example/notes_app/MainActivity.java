@@ -206,4 +206,33 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                     }
                 });
     }
+
+    @Override
+    public void handleEditNote(final DocumentSnapshot snapshot) {
+
+        final Note note = snapshot.toObject(Note.class);
+        final EditText editText = new EditText(this);
+        editText.setText(note.getText().toString());
+        editText.setSelection(note.getText().length());
+
+        new AlertDialog.Builder(this)
+                .setTitle("Edit note")
+                .setView(editText)
+                .setPositiveButton("Done", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String newText = editText.getText().toString();
+                        note.setText(newText);
+                        snapshot.getReference().set(note)
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        Log.d(TAG, "onSuccess: ");
+                                    }
+                                });
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
 }

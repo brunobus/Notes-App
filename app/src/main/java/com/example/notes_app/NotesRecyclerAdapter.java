@@ -1,6 +1,7 @@
 package com.example.notes_app;
 
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +19,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 public class NotesRecyclerAdapter extends FirestoreRecyclerAdapter<Note, NotesRecyclerAdapter.NoteViewHolder> {
 
     NoteListener noteListener;
+    private static final String TAG = "NotesRecyclerAdapter";
 
     public NotesRecyclerAdapter(@NonNull FirestoreRecyclerOptions<Note> options, NoteListener noteListener) {
         super(options);
@@ -65,10 +67,20 @@ public class NotesRecyclerAdapter extends FirestoreRecyclerAdapter<Note, NotesRe
 
                 }
             });
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    DocumentSnapshot snapshot = getSnapshots().getSnapshot(getAdapterPosition());
+                    noteListener.handleEditNote((snapshot));
+                }
+            });
         }
     }
 
     interface NoteListener {
         public void handleCheckChanged(boolean isChecked, DocumentSnapshot snapshot);
+        public void handleEditNote(DocumentSnapshot snapshot);
     }
 }
