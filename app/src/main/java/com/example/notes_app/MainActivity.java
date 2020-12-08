@@ -6,12 +6,16 @@ import android.os.Bundle;
 
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.GetTokenResult;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -25,6 +29,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements FirebaseAuth.AuthStateListener {
 
@@ -55,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     private void showAlertDialog(){
 
         final EditText noteEditText = new EditText(this);
-        
+
         new AlertDialog.Builder(this)
                 .setTitle("Add Note")
                 .setView(noteEditText)
@@ -63,10 +69,32 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         Log.d(TAG, "OnClick: " + noteEditText.getText());
+                        addNote(noteEditText.getText().toString());
                     }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void addNote(String text){
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        Note note = new Note(text, false, new Timestamp(new Date()), userId);
+
+        FirebaseFirestore.getInstance()
+                .collection("notes")
+                .add(note)
+                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                    @Override
+                    public void onSuccess(DocumentReference documentReference) {
+                        Log.d(TAG, "onSuccess: Uspjesno dodan note");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(MainActivity.this, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void startLoginActivity(){
