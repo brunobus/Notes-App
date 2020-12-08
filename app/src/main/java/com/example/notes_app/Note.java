@@ -26,7 +26,7 @@ public class Note {
         this.text = text;
     }
 
-    public boolean isCompleted() {
+    public boolean getCompleted() {
         return completed;
     }
 

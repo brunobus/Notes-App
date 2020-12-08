@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 
 import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -13,14 +14,17 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.util.Log;
@@ -36,7 +40,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
 
     RecyclerView recyclerView;
     private static final String TAG = "MainActivity";
-
+    NotesRecyclerAdapter notesRecyclerAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         setSupportActionBar(toolbar);
 
         recyclerView = findViewById(R.id.recyclerView);
+        recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -142,6 +147,9 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     protected void onStop() {
         super.onStop();
         FirebaseAuth.getInstance().removeAuthStateListener(this);
+        if(notesRecyclerAdapter != null){
+            notesRecyclerAdapter.stopListening();
+        }
     }
 
     @Override
@@ -150,6 +158,8 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
             startLoginActivity();
             return;
         }
+
+        initRecyclerView(firebaseAuth.getCurrentUser());
 
         firebaseAuth.getCurrentUser().getIdToken(true)
                 .addOnSuccessListener(new OnSuccessListener<GetTokenResult>() {
@@ -160,5 +170,21 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 });
 
         Log.d(TAG, "onAuthStateChange " + firebaseAuth.getCurrentUser().getPhoneNumber());
+    }
+
+    private void initRecyclerView(FirebaseUser user){
+
+        Query query = FirebaseFirestore.getInstance()
+                .collection("notes")
+                .whereEqualTo("userId", user.getUid());
+
+        FirestoreRecyclerOptions<Note> options = new FirestoreRecyclerOptions.Builder<Note>()
+                .setQuery(query, Note.class)
+                .build();
+
+        notesRecyclerAdapter = new NotesRecyclerAdapter(options);
+        recyclerView.setAdapter(notesRecyclerAdapter);
+
+        notesRecyclerAdapter.startListening();
     }
 }
